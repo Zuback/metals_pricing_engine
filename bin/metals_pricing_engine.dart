@@ -178,7 +178,7 @@ String? mapToInternalId(String rawName) {
 
   // 6. GOLD (Includes Pre-1933 and Bullion)
   if (name.contains('gold')) {
-    if (name.contains('double eagle') || name.contains('$20') || name.contains('pre-1933')) return 'gold_1oz';
+    if (name.contains('double eagle') || name.contains(r'$20') || name.contains('pre-1933')) return 'gold_1oz';
     if (name.contains('1/10') || name.contains('0.1')) return 'gold_fractional_1_10oz';
     if (name.contains('1/4') || name.contains('0.25')) return 'gold_fractional_1_4oz';
     if (name.contains('1/2') || name.contains('0.5')) return 'gold_fractional_1_2oz';
