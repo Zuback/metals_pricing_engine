@@ -1,4 +1,4 @@
-name: Run name: Run Pricing Engine
+name: Run Pricing Engine
 
 on:
   schedule:
