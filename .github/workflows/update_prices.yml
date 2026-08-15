@@ -1,4 +1,4 @@
-name: Run Pricing Engine
+name: Run name: Run Pricing Engine
 
 on:
   schedule:
@@ -22,14 +22,16 @@ jobs:
       - name: Run Pricing Engine
         run: dart run bin/metals_pricing_engine.dart
 
-      - name: Pull latest changes to avoid divergence
+      - name: Commit and Push Updated prices.json
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git pull --rebase origin main
-
-      - name: Commit and Push Updated prices.json
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Auto-update prices.json [skip ci]"
-          file_pattern: "prices.json"
+          git add prices.json
+          
+          if git diff --staged --quiet; then
+            echo "No changes to prices.json to commit."
+          else
+            git commit -m "Auto-update prices.json [skip ci]"
+            git pull --rebase origin main
+            git push origin main
+          fi
