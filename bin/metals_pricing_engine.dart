@@ -18,16 +18,14 @@ void main() async {
   
   String csvData;
   try {
-    // Cleanly decode the gzipped bytes into a standard UTF-8 string
     final decompressedBytes = gzip.decode(response.bodyBytes);
     csvData = utf8.decode(decompressedBytes, allowMalformed: true); 
   } catch (e) {
     csvData = response.body;
   }
 
-  // --- THE DEFINITIVE FIX: Explicit instantiation without const ---
-  final converter = CsvToListConverter();
-  final List<List<dynamic>> rows = converter.convert(csvData);
+  // --- REVERTED: Back to your original, perfectly working code! ---
+  final List<List<dynamic>> rows = csv.decode(csvData);
   
   if (rows.isEmpty) {
     print('The CSV is empty.');
