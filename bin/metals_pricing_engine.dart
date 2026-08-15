@@ -60,14 +60,14 @@ void main() async {
       double price = double.tryParse(rawPrice.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
       if (price <= 0) continue;
 
-      // SANITY CHECKS BY CATEGORY
+      // SANITY CHECKS BY CATEGORY (Lowered Morgan/Peace floor to $10 to catch $17.19 culls)
       if (internalId.startsWith('gold_') && (price < 25 || price > 6000)) continue;
       if (internalId.startsWith('silver_') && (price < 2 || price > 5000)) continue;
       if (internalId.startsWith('platinum_') && (price < 30 || price > 3000)) continue;
       if (internalId.startsWith('palladium_') && (price < 30 || price > 3000)) continue;
       if (internalId == 'copper_1oz' && (price < 1 || price > 20)) continue;
-      if (internalId == 'morgan_dollar' && (price < 20 || price > 1500)) continue;
-      if (internalId == 'peace_dollar' && (price < 20 || price > 1500)) continue;
+      if (internalId == 'morgan_dollar' && (price < 10 || price > 1500)) continue;
+      if (internalId == 'peace_dollar' && (price < 10 || price > 1500)) continue;
       if (internalId == 'junk_silver' && (price < 5 || price > 3000)) continue;
       
       // Granular Goldback Bounds
@@ -104,13 +104,16 @@ void main() async {
 String? mapToInternalId(String rawName) {
   final name = rawName.toLowerCase();
 
-  // EXCLUDE non-coin accessories immediately
+  // EXCLUDE non-coin accessories, books, and copper items immediately
   if (name.contains('empty tube') || 
       name.contains('plastic capsule') || 
       name.contains('display box') || 
       name.contains('bezel') ||
       name.contains('air-tite') ||
-      name.contains('slab holder')) {
+      name.contains('slab holder') ||
+      name.contains('manifesto') ||
+      name.contains('copper bar') ||
+      name.contains('copper round')) {
     return null;
   }
 
@@ -128,8 +131,18 @@ String? mapToInternalId(String rawName) {
   }
 
   // 2. SPECIFIC DOLLARS
-  if (name.contains('morgan')) return 'morgan_dollar';
-  if (name.contains('peace')) return 'peace_dollar';
+  if (name.contains('morgan')) {
+    if (name.contains('dollar') || name.contains('coin') || name.contains('18') || name.contains('19') || name.contains('circulated') || name.contains('cull') || name.contains('au') || name.contains('vf') || name.contains('ms')) {
+      if (!name.contains('copper') && !name.contains('round')) {
+        return 'morgan_dollar';
+      }
+    }
+  }
+  if (name.contains('peace')) {
+    if (name.contains('dollar') || name.contains('coin') || name.contains('19') || name.contains('circulated') || name.contains('cull')) {
+      return 'peace_dollar';
+    }
+  }
 
   // 3. 90%, 40%, & 35% JUNK SILVER
   if (name.contains('90%') || 
