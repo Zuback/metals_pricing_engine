@@ -95,7 +95,7 @@ void main() async {
     }
   }
 
-  // CURATE & CAP: Group by item_id and keep only the top 3 best prices per item to avoid clutter
+  // CURATE & CAP: Group by item_id and keep only the single lowest price deal per item
   Map<String, List<Map<String, dynamic>>> grouped = {};
   for (var item in normalizedPrices) {
     grouped.putIfAbsent(item['item_id'], () => []).add(item);
@@ -104,13 +104,13 @@ void main() async {
   List<Map<String, dynamic>> curatedPrices = [];
   grouped.forEach((itemId, items) {
     items.sort((a, b) => (a['price'] as double).compareTo(b['price'] as double));
-    curatedPrices.addAll(items.take(3)); // Limit to top 3 best options
+    curatedPrices.addAll(items.take(1)); // Restrict to the single lowest price option
   });
 
   final file = File('prices.json');
   await file.writeAsString(jsonEncode(curatedPrices));
   
-  print('Success! Curated ${curatedPrices.length} clean, top-tier items to prices.json');
+  print('Success! Curated ${curatedPrices.length} lowest-price leader items to prices.json');
 }
 
 // ==========================================
