@@ -25,8 +25,8 @@ void main() async {
     csvData = response.body;
   }
 
-  // --- FIX 1: Safely invoke the CSV Converter to avoid undefined name errors ---
-  final List<List<dynamic>> rows = const CsvToListConverter().convert(csvData);
+  // --- FIX 1: Removed 'const' because newer csv packages don't support it ---
+  final List<List<dynamic>> rows = CsvToListConverter().convert(csvData);
   
   if (rows.isEmpty) {
     print('The CSV is empty.');
