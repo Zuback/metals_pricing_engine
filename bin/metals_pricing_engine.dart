@@ -20,8 +20,8 @@ void main() async {
   final decompressedBytes = gzip.decode(response.bodyBytes);
   final String csvData = utf8.decode(decompressedBytes, allowMalformed: true); 
 
-  // Safely parse the CSV string into a list of rows without the 'const' keyword
-  final List<List<dynamic>> rows = const CsvToListConverter().convert(csvData);
+  // --- REVERTED: Back to your original, working code! ---
+  final List<List<dynamic>> rows = csv.decode(csvData);
   
   if (rows.isEmpty) {
     print('The CSV is empty.');
