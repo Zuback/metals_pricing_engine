@@ -96,7 +96,7 @@ void main() async {
     }
   }
 
-  // CURATE & CAP: Group by item_id and keep only the single lowest price deal per item
+  // CURATE & CAP: Group by item_id and keep up to the top 3 lowest price deals
   Map<String, List<Map<String, dynamic>>> grouped = {};
   for (var item in normalizedPrices) {
     String id = item['item_id'] as String;
@@ -106,7 +106,8 @@ void main() async {
   List<Map<String, dynamic>> curatedPrices = [];
   grouped.forEach((itemId, items) {
     items.sort((a, b) => (a['price'] as double).compareTo(b['price'] as double));
-    curatedPrices.addAll(items.take(1)); 
+    // --- CHANGED from 1 to 3 ---
+    curatedPrices.addAll(items.take(3)); 
   });
 
   final file = File('prices.json');
