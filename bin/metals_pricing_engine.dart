@@ -19,12 +19,14 @@ void main() async {
   String csvData;
   try {
     final decompressedBytes = gzip.decode(response.bodyBytes);
-    csvData = utf8.decode(decompressedBytes);
+    // allowMalformed prevents the script from crashing if an affiliate sends weird characters
+    csvData = utf8.decode(decompressedBytes, allowMalformed: true); 
   } catch (e) {
     csvData = response.body;
   }
 
-  final List<List<dynamic>> rows = csv.decode(csvData);
+  // --- FIX 1: Safely invoke the CSV Converter to avoid undefined name errors ---
+  final List<List<dynamic>> rows = const CsvToListConverter().convert(csvData);
   
   if (rows.isEmpty) {
     print('The CSV is empty.');
@@ -60,18 +62,18 @@ void main() async {
       double price = double.tryParse(rawPrice.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
       if (price <= 0) continue;
 
-      // ROBUST SANITY CHECKS BY CATEGORY (Guarding against lowball placeholders and high-end outliers)
+      // --- FIX 2: Modern Sanity Checks (Updated for 2026 Gold/Silver Highs) ---
       if (internalId.startsWith('gold_')) {
-        if (internalId.contains('fractional') && (price < 150 || price > 3000)) continue;
-        if (!internalId.contains('fractional') && (price < 1000 || price > 6000)) continue;
+        if (internalId.contains('fractional') && (price < 300 || price > 3500)) continue;
+        if (internalId == 'gold_1oz' && (price < 4000 || price > 6500)) continue; 
       }
-      if (internalId.startsWith('silver_') && (price < 25 || price > 5000)) continue;
-      if (internalId.startsWith('platinum_') && (price < 500 || price > 3000)) continue;
-      if (internalId.startsWith('palladium_') && (price < 500 || price > 3000)) continue;
+      if (internalId.startsWith('silver_') && (price < 55 || price > 5000)) continue;
+      if (internalId.startsWith('platinum_') && (price < 1500 || price > 3500)) continue;
+      if (internalId.startsWith('palladium_') && (price < 1100 || price > 3000)) continue;
       if (internalId == 'copper_1oz' && (price < 1 || price > 20)) continue;
-      if (internalId == 'morgan_dollar' && (price < 45 || price > 1500)) continue;
-      if (internalId == 'peace_dollar' && (price < 45 || price > 1500)) continue;
-      if (internalId == 'junk_silver' && (price < 15 || price > 3000)) continue;
+      if (internalId == 'morgan_dollar' && (price < 50 || price > 1500)) continue;
+      if (internalId == 'peace_dollar' && (price < 50 || price > 1500)) continue;
+      if (internalId == 'junk_silver' && (price < 40 || price > 3000)) continue;
       
       // Granular Goldback Bounds
       if (internalId.startsWith('goldback_')) {
@@ -98,7 +100,8 @@ void main() async {
   // CURATE & CAP: Group by item_id and keep only the single lowest price deal per item
   Map<String, List<Map<String, dynamic>>> grouped = {};
   for (var item in normalizedPrices) {
-    grouped.putIfAbsent(item['item_id'], () => []).add(item);
+    String id = item['item_id'] as String;
+    grouped.putIfAbsent(id, () => []).add(item);
   }
 
   List<Map<String, dynamic>> curatedPrices = [];
@@ -198,6 +201,18 @@ String? mapToInternalId(String rawName) {
 
   // 6. GOLD (Includes Pre-1933 and Bullion)
   if (name.contains('gold')) {
+    
+    // --- FIX 3: Intercept foreign/historical gold so they don't trigger "eagle" or "1 oz" logic ---
+    if (name.contains('peso') || 
+        name.contains('franc') || 
+        name.contains('ducat') || 
+        name.contains('corona') || 
+        name.contains('sovereign') ||
+        name.contains('gram') ||
+        name.contains('pamp')) {
+      return 'gold_other';
+    }
+
     if (name.contains('double eagle') || name.contains(r'$20') || name.contains('pre-1933')) return 'gold_1oz';
     if (name.contains('1/10') || name.contains('0.1')) return 'gold_fractional_1_10oz';
     if (name.contains('1/4') || name.contains('0.25')) return 'gold_fractional_1_4oz';
@@ -208,6 +223,12 @@ String? mapToInternalId(String rawName) {
 
   // 7. SILVER (Includes World Silver & Bullion)
   if (name.contains('silver')) {
+
+    // --- FIX 4: Intercept silver pesos/grams so they don't trigger "eagle" or "1 oz" logic ---
+    if (name.contains('peso') || name.contains('franc') || name.contains('gram')) {
+      return 'silver_other';
+    }
+
     if (name.contains('eagle')) return 'silver_eagle_1oz';
     if (name.contains('1/2') || name.contains('half')) return 'silver_fractional_1_2oz';
     if (name.contains('5 oz') || name.contains('10 oz') || name.contains('100 oz') || name.contains('kilo') || name.contains('kg')) return 'silver_bar_bulk';
