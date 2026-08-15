@@ -60,15 +60,18 @@ void main() async {
       double price = double.tryParse(rawPrice.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
       if (price <= 0) continue;
 
-      // SANITY CHECKS BY CATEGORY (Lowered Morgan/Peace floor to $10 to catch $17.19 culls)
-      if (internalId.startsWith('gold_') && (price < 25 || price > 6000)) continue;
-      if (internalId.startsWith('silver_') && (price < 2 || price > 5000)) continue;
-      if (internalId.startsWith('platinum_') && (price < 30 || price > 3000)) continue;
-      if (internalId.startsWith('palladium_') && (price < 30 || price > 3000)) continue;
+      // ROBUST SANITY CHECKS BY CATEGORY (Guarding against lowball placeholders and high-end outliers)
+      if (internalId.startsWith('gold_')) {
+        if (internalId.contains('fractional') && (price < 150 || price > 3000)) continue;
+        if (!internalId.contains('fractional') && (price < 1000 || price > 6000)) continue;
+      }
+      if (internalId.startsWith('silver_') && (price < 25 || price > 5000)) continue;
+      if (internalId.startsWith('platinum_') && (price < 500 || price > 3000)) continue;
+      if (internalId.startsWith('palladium_') && (price < 500 || price > 3000)) continue;
       if (internalId == 'copper_1oz' && (price < 1 || price > 20)) continue;
-      if (internalId == 'morgan_dollar' && (price < 10 || price > 1500)) continue;
-      if (internalId == 'peace_dollar' && (price < 10 || price > 1500)) continue;
-      if (internalId == 'junk_silver' && (price < 5 || price > 3000)) continue;
+      if (internalId == 'morgan_dollar' && (price < 45 || price > 1500)) continue;
+      if (internalId == 'peace_dollar' && (price < 45 || price > 1500)) continue;
+      if (internalId == 'junk_silver' && (price < 15 || price > 3000)) continue;
       
       // Granular Goldback Bounds
       if (internalId.startsWith('goldback_')) {
