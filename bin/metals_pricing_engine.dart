@@ -16,17 +16,12 @@ void main() async {
 
   print('Download complete. Decompressing and parsing CSV...');
   
-  String csvData;
-  try {
-    final decompressedBytes = gzip.decode(response.bodyBytes);
-    // allowMalformed prevents the script from crashing if an affiliate sends weird characters
-    csvData = utf8.decode(decompressedBytes, allowMalformed: true); 
-  } catch (e) {
-    csvData = response.body;
-  }
+  // Cleanly decode the gzipped bytes into a standard UTF-8 string
+  final decompressedBytes = gzip.decode(response.bodyBytes);
+  final String csvData = utf8.decode(decompressedBytes, allowMalformed: true); 
 
-  // --- FIX 1: Removed 'const' because newer csv packages don't support it ---
-  final List<List<dynamic>> rows = CsvToListConverter().convert(csvData);
+  // Safely parse the CSV string into a list of rows without the 'const' keyword
+  final List<List<dynamic>> rows = const CsvToListConverter().convert(csvData);
   
   if (rows.isEmpty) {
     print('The CSV is empty.');
@@ -62,7 +57,7 @@ void main() async {
       double price = double.tryParse(rawPrice.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
       if (price <= 0) continue;
 
-      // --- FIX 2: Modern Sanity Checks (Updated for 2026 Gold/Silver Highs) ---
+      // Modern Sanity Checks (Updated for 2026 Gold/Silver Highs)
       if (internalId.startsWith('gold_')) {
         if (internalId.contains('fractional') && (price < 300 || price > 3500)) continue;
         if (internalId == 'gold_1oz' && (price < 4000 || price > 6500)) continue; 
@@ -107,7 +102,7 @@ void main() async {
   List<Map<String, dynamic>> curatedPrices = [];
   grouped.forEach((itemId, items) {
     items.sort((a, b) => (a['price'] as double).compareTo(b['price'] as double));
-    curatedPrices.addAll(items.take(1)); // Restrict to the single lowest price option
+    curatedPrices.addAll(items.take(1)); 
   });
 
   final file = File('prices.json');
@@ -202,7 +197,7 @@ String? mapToInternalId(String rawName) {
   // 6. GOLD (Includes Pre-1933 and Bullion)
   if (name.contains('gold')) {
     
-    // --- FIX 3: Intercept foreign/historical gold so they don't trigger "eagle" or "1 oz" logic ---
+    // Intercept foreign/historical gold so they don't trigger "eagle" or "1 oz" logic
     if (name.contains('peso') || 
         name.contains('franc') || 
         name.contains('ducat') || 
@@ -224,7 +219,7 @@ String? mapToInternalId(String rawName) {
   // 7. SILVER (Includes World Silver & Bullion)
   if (name.contains('silver')) {
 
-    // --- FIX 4: Intercept silver pesos/grams so they don't trigger "eagle" or "1 oz" logic ---
+    // Intercept silver pesos/grams so they don't trigger "eagle" or "1 oz" logic
     if (name.contains('peso') || name.contains('franc') || name.contains('gram')) {
       return 'silver_other';
     }
