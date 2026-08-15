@@ -22,6 +22,12 @@ jobs:
       - name: Run Pricing Engine
         run: dart run bin/metals_pricing_engine.dart
 
+      - name: Pull latest changes to avoid divergence
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
+
       - name: Commit and Push Updated prices.json
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
