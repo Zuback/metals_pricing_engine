@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:csv/csv.dart';
 
-// Paste your exact Awin Create-a-Feed URL here
 const String awinFeedUrl = 'https://productdata.awin.com/datafeed/download/apikey/09d40570b9ac3b418229e8a6faeda0fa/language/en/fid/98921,102758,103024/rid/0/hasEnhancedFeeds/0/columns/product_name,aw_deep_link,search_price,aw_product_id,merchant_name,merchant_product_id,merchant_image_url,description,merchant_category/format/csv/delimiter/%2C/compression/gzip/adultcontent/1/';
 
 void main() async {
@@ -61,24 +60,27 @@ void main() async {
       double price = double.tryParse(rawPrice.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
       if (price <= 0) continue;
 
-      // SANITY CHECKS BY CATEGORY (Evaluated here in main where price exists)
-      if (internalId.startsWith('gold_') && (price < 30 || price > 6000)) continue;
+      // SANITY CHECKS BY CATEGORY
+      if (internalId.startsWith('gold_') && (price < 25 || price > 6000)) continue;
       if (internalId.startsWith('silver_') && (price < 2 || price > 5000)) continue;
-      if (internalId == 'morgan_dollar' && (price < 25 || price > 1000)) continue;
-      if (internalId == 'peace_dollar' && (price < 25 || price > 1000)) continue;
-      if (internalId == 'junk_silver' && (price < 10 || price > 2500)) continue;
+      if (internalId.startsWith('platinum_') && (price < 30 || price > 3000)) continue;
+      if (internalId.startsWith('palladium_') && (price < 30 || price > 3000)) continue;
+      if (internalId == 'copper_1oz' && (price < 1 || price > 20)) continue;
+      if (internalId == 'morgan_dollar' && (price < 20 || price > 1500)) continue;
+      if (internalId == 'peace_dollar' && (price < 20 || price > 1500)) continue;
+      if (internalId == 'junk_silver' && (price < 5 || price > 3000)) continue;
       
-      // Granular Goldback Sanity Bounds (1/4 up to 100)
+      // Granular Goldback Bounds
       if (internalId.startsWith('goldback_')) {
-        if (internalId == 'goldback_quarter' && (price < 0.5 || price > 10)) continue;
-        if (internalId == 'goldback_half' && (price < 1 || price > 15)) continue;
-        if (internalId == 'goldback_1' && (price < 2 || price > 25)) continue;
-        if (internalId == 'goldback_2' && (price < 4 || price > 50)) continue;
-        if (internalId == 'goldback_5' && (price < 10 || price > 120)) continue;
-        if (internalId == 'goldback_10' && (price < 20 || price > 250)) continue;
-        if (internalId == 'goldback_25' && (price < 50 || price > 600)) continue;
-        if (internalId == 'goldback_50' && (price < 100 || price > 1200)) continue;
-        if (internalId == 'goldback_100' && (price < 200 || price > 2500)) continue;
+        if (internalId == 'goldback_quarter' && (price < 0.5 || price > 15)) continue;
+        if (internalId == 'goldback_half' && (price < 1 || price > 20)) continue;
+        if (internalId == 'goldback_1' && (price < 2 || price > 30)) continue;
+        if (internalId == 'goldback_2' && (price < 4 || price > 60)) continue;
+        if (internalId == 'goldback_5' && (price < 10 || price > 150)) continue;
+        if (internalId == 'goldback_10' && (price < 20 || price > 300)) continue;
+        if (internalId == 'goldback_25' && (price < 50 || price > 700)) continue;
+        if (internalId == 'goldback_50' && (price < 100 || price > 1400)) continue;
+        if (internalId == 'goldback_100' && (price < 200 || price > 3000)) continue;
       }
 
       normalizedPrices.add({
@@ -97,7 +99,7 @@ void main() async {
 }
 
 // ==========================================
-// THE COMPREHENSIVE NORMALIZATION DICTIONARY
+// MASTER CATALOG NORMALIZATION DICTIONARY
 // ==========================================
 String? mapToInternalId(String rawName) {
   final name = rawName.toLowerCase();
@@ -112,7 +114,7 @@ String? mapToInternalId(String rawName) {
     return null;
   }
 
-  // 1. GOLDBACKS (Parsed by Denomination)
+  // 1. GOLDBACKS
   if (name.contains('goldback')) {
     if (name.contains('100')) return 'goldback_100';
     if (name.contains('50')) return 'goldback_50';
@@ -125,45 +127,58 @@ String? mapToInternalId(String rawName) {
     return 'goldback_1'; 
   }
 
-  // 2. MORGAN & PEACE DOLLARS (Broadened to catch dealer shorthand)
-  if (name.contains('morgan')) {
-    return 'morgan_dollar';
-  }
-  if (name.contains('peace')) {
-    return 'peace_dollar';
-  }
+  // 2. SPECIFIC DOLLARS
+  if (name.contains('morgan')) return 'morgan_dollar';
+  if (name.contains('peace')) return 'peace_dollar';
 
-  // 3. 90% JUNK SILVER (Broadened to catch 'face value' sales)
+  // 3. 90%, 40%, & 35% JUNK SILVER
   if (name.contains('90%') || 
+      name.contains('40%') || 
+      name.contains('35%') || 
       name.contains('junk') || 
       name.contains('constitutional') || 
       name.contains('walking liberty') || 
-      name.contains('franklin half') || 
+      name.contains('franklin') || 
       name.contains('barber') || 
-      name.contains('mercury dime') || 
-      name.contains('roosevelt dime') || 
-      name.contains('washington quarter') ||
+      name.contains('mercury') || 
+      name.contains('roosevelt') || 
+      name.contains('washington') ||
+      name.contains('war nickel') ||
       name.contains('face value')) {
     return 'junk_silver';
   }
 
-  // 4. GOLD
+  // 4. PLATINUM & PALLADIUM
+  if (name.contains('platinum')) {
+    if (name.contains('1 oz') || name.contains('1 ounce') || name.contains('eagle') || name.contains('maple')) return 'platinum_1oz';
+    return 'platinum_other';
+  }
+  if (name.contains('palladium')) {
+    if (name.contains('1 oz') || name.contains('1 ounce')) return 'palladium_1oz';
+    return 'palladium_other';
+  }
+
+  // 5. COPPER
+  if (name.contains('copper')) {
+    return 'copper_1oz';
+  }
+
+  // 6. GOLD (Includes Pre-1933 and Bullion)
   if (name.contains('gold')) {
+    if (name.contains('double eagle') || name.contains('$20') || name.contains('pre-1933')) return 'gold_1oz';
     if (name.contains('1/10') || name.contains('0.1')) return 'gold_fractional_1_10oz';
     if (name.contains('1/4') || name.contains('0.25')) return 'gold_fractional_1_4oz';
     if (name.contains('1/2') || name.contains('0.5')) return 'gold_fractional_1_2oz';
-    if (name.contains('1 oz') || name.contains('1 ounce')) return 'gold_1oz';
+    if (name.contains('1 oz') || name.contains('1 ounce') || name.contains('buffalo') || name.contains('maple') || name.contains('eagle')) return 'gold_1oz';
     return 'gold_other';
   }
 
-  // 5. SILVER
+  // 7. SILVER (Includes World Silver & Bullion)
   if (name.contains('silver')) {
-    // --- Specific catch for Silver Eagles to match the app ---
     if (name.contains('eagle')) return 'silver_eagle_1oz';
-    
     if (name.contains('1/2') || name.contains('half')) return 'silver_fractional_1_2oz';
     if (name.contains('5 oz') || name.contains('10 oz') || name.contains('100 oz') || name.contains('kilo') || name.contains('kg')) return 'silver_bar_bulk';
-    if (name.contains('1 oz') || name.contains('1 ounce')) return 'silver_1oz';
+    if (name.contains('1 oz') || name.contains('1 ounce') || name.contains('maple') || name.contains('britannia') || name.contains('libertad')) return 'silver_1oz';
     return 'silver_other';
   }
 
