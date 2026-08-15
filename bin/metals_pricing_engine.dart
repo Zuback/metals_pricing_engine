@@ -95,10 +95,22 @@ void main() async {
     }
   }
 
+  // CURATE & CAP: Group by item_id and keep only the top 3 best prices per item to avoid clutter
+  Map<String, List<Map<String, dynamic>>> grouped = {};
+  for (var item in normalizedPrices) {
+    grouped.putIfAbsent(item['item_id'], () => []).add(item);
+  }
+
+  List<Map<String, dynamic>> curatedPrices = [];
+  grouped.forEach((itemId, items) {
+    items.sort((a, b) => (a['price'] as double).compareTo(b['price'] as double));
+    curatedPrices.addAll(items.take(3)); // Limit to top 3 best options
+  });
+
   final file = File('prices.json');
-  await file.writeAsString(jsonEncode(normalizedPrices));
+  await file.writeAsString(jsonEncode(curatedPrices));
   
-  print('Success! Mapped ${normalizedPrices.length} clean items to prices.json');
+  print('Success! Curated ${curatedPrices.length} clean, top-tier items to prices.json');
 }
 
 // ==========================================
@@ -107,7 +119,7 @@ void main() async {
 String? mapToInternalId(String rawName) {
   final name = rawName.toLowerCase();
 
-  // EXCLUDE non-coin accessories, books, and copper items immediately
+  // EXCLUDE non-coin accessories, books, copper items, and low-grade culls immediately
   if (name.contains('empty tube') || 
       name.contains('plastic capsule') || 
       name.contains('display box') || 
@@ -116,7 +128,12 @@ String? mapToInternalId(String rawName) {
       name.contains('slab holder') ||
       name.contains('manifesto') ||
       name.contains('copper bar') ||
-      name.contains('copper round')) {
+      name.contains('copper round') ||
+      name.contains('cull') ||
+      name.contains('slick') ||
+      name.contains('damaged') ||
+      name.contains('cleaned') ||
+      name.contains('holed')) {
     return null;
   }
 
@@ -135,14 +152,14 @@ String? mapToInternalId(String rawName) {
 
   // 2. SPECIFIC DOLLARS
   if (name.contains('morgan')) {
-    if (name.contains('dollar') || name.contains('coin') || name.contains('18') || name.contains('19') || name.contains('circulated') || name.contains('cull') || name.contains('au') || name.contains('vf') || name.contains('ms')) {
+    if (name.contains('dollar') || name.contains('coin') || name.contains('18') || name.contains('19') || name.contains('circulated') || name.contains('au') || name.contains('vf') || name.contains('ms')) {
       if (!name.contains('copper') && !name.contains('round')) {
         return 'morgan_dollar';
       }
     }
   }
   if (name.contains('peace')) {
-    if (name.contains('dollar') || name.contains('coin') || name.contains('19') || name.contains('circulated') || name.contains('cull')) {
+    if (name.contains('dollar') || name.contains('coin') || name.contains('19') || name.contains('circulated')) {
       return 'peace_dollar';
     }
   }
