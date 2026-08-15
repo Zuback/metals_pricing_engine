@@ -122,45 +122,48 @@ String? mapToInternalId(String rawName) {
     if (name.contains('2')) return 'goldback_2';
     if (name.contains('1/2') || name.contains('half')) return 'goldback_half';
     if (name.contains('1/4') || name.contains('quarter')) return 'goldback_quarter';
-    if (name.contains('1')) return 'goldback_1';
     return 'goldback_1'; 
   }
 
-  // 2. MORGAN & PEACE DOLLARS
-  if (name.contains('morgan') && name.contains('dollar')) {
+  // 2. MORGAN & PEACE DOLLARS (Broadened to catch dealer shorthand)
+  if (name.contains('morgan')) {
     return 'morgan_dollar';
   }
-  if (name.contains('peace') && name.contains('dollar')) {
+  if (name.contains('peace')) {
     return 'peace_dollar';
   }
 
-  // 3. 90% JUNK SILVER
+  // 3. 90% JUNK SILVER (Broadened to catch 'face value' sales)
   if (name.contains('90%') || 
-      name.contains('junk silver') || 
+      name.contains('junk') || 
       name.contains('constitutional') || 
       name.contains('walking liberty') || 
-      name.contains('benjamin franklin') || 
+      name.contains('franklin half') || 
       name.contains('barber') || 
       name.contains('mercury dime') || 
       name.contains('roosevelt dime') || 
-      name.contains('washington quarter')) {
+      name.contains('washington quarter') ||
+      name.contains('face value')) {
     return 'junk_silver';
   }
 
   // 4. GOLD
   if (name.contains('gold')) {
-    if (name.contains('1/10') || name.contains('0.1 oz')) return 'gold_fractional_1_10oz';
-    if (name.contains('1/4') || name.contains('0.25 oz')) return 'gold_fractional_1_4oz';
-    if (name.contains('1/2') || name.contains('0.5 oz')) return 'gold_fractional_1_2oz';
+    if (name.contains('1/10') || name.contains('0.1')) return 'gold_fractional_1_10oz';
+    if (name.contains('1/4') || name.contains('0.25')) return 'gold_fractional_1_4oz';
+    if (name.contains('1/2') || name.contains('0.5')) return 'gold_fractional_1_2oz';
     if (name.contains('1 oz') || name.contains('1 ounce')) return 'gold_1oz';
     return 'gold_other';
   }
 
   // 5. SILVER
   if (name.contains('silver')) {
-    if (name.contains('1/2 oz') || name.contains('half oz')) return 'silver_fractional_1_2oz';
+    // --- Specific catch for Silver Eagles to match the app ---
+    if (name.contains('eagle')) return 'silver_eagle_1oz';
+    
+    if (name.contains('1/2') || name.contains('half')) return 'silver_fractional_1_2oz';
+    if (name.contains('5 oz') || name.contains('10 oz') || name.contains('100 oz') || name.contains('kilo') || name.contains('kg')) return 'silver_bar_bulk';
     if (name.contains('1 oz') || name.contains('1 ounce')) return 'silver_1oz';
-    if (name.contains('5 oz') || name.contains('10 oz') || name.contains('100 oz') || name.contains(' kilo')) return 'silver_bar_bulk';
     return 'silver_other';
   }
 
