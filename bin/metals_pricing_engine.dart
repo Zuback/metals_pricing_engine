@@ -3,9 +3,20 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:csv/csv.dart';
 
-const String awinFeedUrl = 'https://productdata.awin.com/datafeed/download/apikey/09d40570b9ac3b418229e8a6faeda0fa/language/en/fid/98921,102758,103024/rid/0/hasEnhancedFeeds/0/columns/product_name,aw_deep_link,search_price,aw_product_id,merchant_name,merchant_product_id,merchant_image_url,description,merchant_category/format/csv/delimiter/%2C/compression/gzip/adultcontent/1/';
-
 void main() async {
+  print('Starting Precious Metals Pricing Engine...');
+
+  // 1. Fetch the token securely from the environment
+  final String awinApiKey = Platform.environment['AWIN_API_TOKEN'] ?? ''; 
+
+  if (awinApiKey.isEmpty) {
+    print('⚠️ Error: AWIN_API_TOKEN environment variable is missing.');
+    exit(1); 
+  }
+
+  // 2. Inject the token dynamically into the URL
+  final String awinFeedUrl = 'https://productdata.awin.com/datafeed/download/apikey/$awinApiKey/language/en/fid/98921,102758,103024/rid/0/hasEnhancedFeeds/0/columns/product_name,aw_deep_link,search_price,aw_product_id,merchant_name,merchant_product_id,merchant_image_url,description,merchant_category/format/csv/delimiter/%2C/compression/gzip/adultcontent/1/';
+
   print('Fetching Awin affiliate data feed...');
   
   final response = await http.get(Uri.parse(awinFeedUrl));
@@ -24,7 +35,6 @@ void main() async {
     csvData = response.body;
   }
 
-  // --- REVERTED: Back to your original, perfectly working code! ---
   final List<List<dynamic>> rows = csv.decode(csvData);
   
   if (rows.isEmpty) {
@@ -106,7 +116,6 @@ void main() async {
   List<Map<String, dynamic>> curatedPrices = [];
   grouped.forEach((itemId, items) {
     items.sort((a, b) => (a['price'] as double).compareTo(b['price'] as double));
-    // --- CHANGED from 1 to 3 ---
     curatedPrices.addAll(items.take(3)); 
   });
 
