@@ -2,10 +2,9 @@ name: Run Pricing Engine
 
 on:
   schedule:
-    - cron: '0 */4 * * *' # Runs every 4 hours
+    - cron: '0 */4 * * *'
   workflow_dispatch:
 
-# Prevent two pricing jobs from modifying main at the same time.
 concurrency:
   group: pricing-engine
   cancel-in-progress: false
@@ -47,7 +46,6 @@ jobs:
 
           git commit -m "Auto-update prices.json [skip ci]"
 
-          # Make sure we're based on the latest main before pushing.
           git fetch origin main
           git rebase origin/main
 
