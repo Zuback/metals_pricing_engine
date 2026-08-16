@@ -25,16 +25,13 @@ jobs:
 
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
-      
-      - name: Run Pricing Engine
-        env:
-          AWIN_API_TOKEN: ${{ secrets.AWIN_API_TOKEN }}
-        run: dart run bin/metals_pricing_engine.dart
 
       - name: Install Dependencies
         run: dart pub get
 
       - name: Run Pricing Engine
+        env:
+          AWIN_API_TOKEN: ${{ secrets.AWIN_API_TOKEN }}
         run: dart run bin/metals_pricing_engine.dart
 
       - name: Commit and Push Updated prices.json
